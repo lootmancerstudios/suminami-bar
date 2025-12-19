@@ -1,0 +1,121 @@
+#!/bin/bash
+# Bluetooth status widget with connected devices and battery info
+
+# Source theme colors
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+source "$SCRIPT_DIR/colors.sh" 2>/dev/null || {
+    COLOR_ACCENT="#D27E99"
+    COLOR_FG="#DCD7BA"
+    COLOR_MUTED="#727169"
+    COLOR_SYSTEM="#98BB6C"
+    COLOR_AUDIO="#7FB4CA"
+    COLOR_WARNING="#E6C384"
+    COLOR_CRITICAL="#E46876"
+}
+
+# Theme colors
+accent="$COLOR_ACCENT"
+blue="$COLOR_AUDIO"
+gray="$COLOR_MUTED"
+white="$COLOR_FG"
+green="$COLOR_SYSTEM"
+yellow="$COLOR_WARNING"
+red="$COLOR_CRITICAL"
+
+# Check if bluetooth is available
+if ! command -v bluetoothctl &>/dev/null; then
+    echo '{"text": "", "tooltip": "", "class": "none"}'
+    exit 0
+fi
+
+# Check if bluetooth controller exists
+if ! bluetoothctl show &>/dev/null; then
+    echo '{"text": "", "tooltip": "", "class": "none"}'
+    exit 0
+fi
+
+# Get controller power state
+powered=$(bluetoothctl show | grep "Powered:" | awk '{print $2}')
+
+if [ "$powered" != "yes" ]; then
+    tooltip="<span color='$accent'><b>Bluetooth</b></span>"
+    tooltip="$tooltip\n<span color='$gray'>Powered off</span>"
+    tooltip="$tooltip\n"
+    tooltip="$tooltip\n<span color='$gray'>Click to manage</span>"
+    echo "{\"text\": \"󰂲\", \"tooltip\": \"$tooltip\", \"class\": \"disabled\"}"
+    exit 0
+fi
+
+# Get connected devices
+connected_devices=$(bluetoothctl devices Connected 2>/dev/null)
+
+if [ -z "$connected_devices" ]; then
+    # Bluetooth on but no devices connected
+    tooltip="<span color='$accent'><b>Bluetooth</b></span>"
+    tooltip="$tooltip\n<span color='$gray'>No devices connected</span>"
+    tooltip="$tooltip\n"
+    tooltip="$tooltip\n<span color='$gray'>Click to manage</span>"
+    echo "{\"text\": \"󰂯\", \"tooltip\": \"$tooltip\", \"class\": \"on\"}"
+    exit 0
+fi
+
+# Count connected devices
+device_count=$(echo "$connected_devices" | wc -l)
+
+# Build tooltip with device info
+tooltip="<span color='$accent'><b>Bluetooth</b></span>"
+tooltip="$tooltip\n<span color='$gray'>Connected:</span> <span color='$white'>$device_count device(s)</span>"
+tooltip="$tooltip\n"
+
+# List each connected device with battery if available
+while IFS= read -r line; do
+    mac=$(echo "$line" | awk '{print $2}')
+    name=$(echo "$line" | cut -d' ' -f3-)
+
+    # Try to get battery level
+    battery=""
+    if command -v upower &>/dev/null; then
+        # Look for device in upower
+        upower_path=$(upower -e 2>/dev/null | grep -i "${mac//:/_}" | head -1)
+        if [ -n "$upower_path" ]; then
+            battery=$(upower -i "$upower_path" 2>/dev/null | grep "percentage:" | awk '{print $2}' | tr -d '%')
+        fi
+    fi
+
+    # Device icon based on name/type
+    icon="󰂱"
+    name_lower=$(echo "$name" | tr '[:upper:]' '[:lower:]')
+    case "$name_lower" in
+        *headphone*|*airpod*|*buds*|*earphone*) icon="󰋋" ;;
+        *speaker*|*soundbar*) icon="󰓃" ;;
+        *keyboard*) icon="󰌌" ;;
+        *mouse*|*trackpad*) icon="󰍽" ;;
+        *controller*|*gamepad*|*joystick*) icon="󰖺" ;;
+        *phone*|*iphone*|*android*) icon="󰏲" ;;
+        *watch*) icon="󰖉" ;;
+    esac
+
+    if [ -n "$battery" ] && [ "$battery" -gt 0 ]; then
+        # Color based on battery level
+        bat_color="$green"
+        [ "$battery" -lt 50 ] && bat_color="$yellow"
+        [ "$battery" -lt 20 ] && bat_color="$red"
+        tooltip="$tooltip\n<span color='$blue'>$icon</span> <span color='$white'>$name</span> <span color='$bat_color'>${battery}%</span>"
+    else
+        tooltip="$tooltip\n<span color='$blue'>$icon</span> <span color='$white'>$name</span>"
+    fi
+done <<< "$connected_devices"
+
+tooltip="$tooltip\n"
+tooltip="$tooltip\n<span color='$gray'>Click to manage</span>"
+
+# Icon based on connection status
+if [ "$device_count" -gt 0 ]; then
+    icon="󰂱"
+    class="connected"
+else
+    icon="󰂯"
+    class="on"
+fi
+
+echo "{\"text\": \"$icon\", \"tooltip\": \"$tooltip\", \"class\": \"$class\"}"

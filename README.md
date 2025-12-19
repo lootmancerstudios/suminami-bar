@@ -1,0 +1,233 @@
+# SumiNami Bar
+
+A polished, feature-rich Waybar theme with rich tooltips, resolution-aware scaling, and multiple color schemes.
+
+![SumiNami Bar](https://img.shields.io/badge/Waybar-Theme-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+
+## Features
+
+- **Rich Pango Tooltips** - Detailed, styled tooltips with color-coded information
+- **Resolution-Aware Scaling** - Automatically adjusts font sizes and dimensions for different displays
+- **Multiple Color Schemes** - Kanagawa (Wave, Dragon, Lotus) with more coming
+- **Comprehensive Modules** - CPU, Memory, Temperature, Battery, Network, Bluetooth, Audio, Weather, Media
+- **Custom Pickers** - Themed wofi menus for WiFi and Bluetooth management
+- **Hardware Detection** - Gracefully hides modules when hardware isn't present (no battery on desktop, etc.)
+- **Central Configuration** - Single config file for all customizations
+
+## Screenshots
+
+*Coming soon*
+
+## Installation
+
+### Dependencies
+
+**Required:**
+- waybar
+- wofi (or rofi)
+- JetBrainsMono Nerd Font
+
+**Recommended:**
+- NetworkManager (for network/wifi functionality)
+- bluez + bluez-utils (for bluetooth)
+- brightnessctl (for backlight control)
+- playerctl (for media controls)
+- lm_sensors (for temperature monitoring)
+
+**Arch Linux:**
+```bash
+sudo pacman -S waybar wofi networkmanager bluez bluez-utils brightnessctl playerctl lm_sensors
+yay -S ttf-jetbrains-mono-nerd  # or from official repos
+```
+
+### Install SumiNami Bar
+
+```bash
+# Backup existing config
+mv ~/.config/waybar ~/.config/waybar.bak
+
+# Clone SumiNami Bar
+git clone https://github.com/YOUR_USERNAME/suminami-bar.git ~/.config/waybar
+
+# Make scripts executable
+chmod +x ~/.config/waybar/scripts/*
+
+# Generate initial styles
+~/.config/waybar/scripts/generate-style
+```
+
+### Hyprland Setup
+
+Add to your Hyprland config (`~/.config/hypr/hyprland.conf` or `env.conf`):
+
+```ini
+exec-once = ~/.config/waybar/scripts/generate-style && waybar
+```
+
+### Sway Setup
+
+Add to your Sway config:
+
+```bash
+exec ~/.config/waybar/scripts/generate-style && waybar
+```
+
+*Note: Replace `hyprland/workspaces` and `hyprland/window` modules with `sway/workspaces` and `sway/window` in config.jsonc*
+
+## Configuration
+
+Edit `~/.config/waybar/suminami.conf`:
+
+```ini
+# Color Scheme
+# Available: kanagawa, kanagawa-dragon, kanagawa-lotus
+color_scheme=kanagawa
+
+# Modules (true/false)
+module_taskbar=false
+module_media=true
+module_weather=true
+module_bluetooth=true
+module_backlight=true
+
+# Thresholds
+cpu_warning=50
+cpu_critical=80
+memory_warning=60
+memory_critical=85
+temp_warning=70
+temp_critical=85
+battery_warning=30
+battery_critical=15
+
+# Behavior
+weather_location=        # Leave empty for auto-detect
+tooltip_delay=200        # Milliseconds
+```
+
+After editing, restart waybar:
+```bash
+pkill waybar && ~/.config/waybar/scripts/generate-style && waybar
+```
+
+## Color Schemes
+
+### Kanagawa Family
+Inspired by [Kanagawa.nvim](https://github.com/rebelot/kanagawa.nvim) and The Great Wave off Kanagawa painting.
+
+| Scheme | Description |
+|--------|-------------|
+| `kanagawa` | Wave (default) - Original dark theme with cool blues |
+| `kanagawa-dragon` | Darker variant with warmer, muted earth tones |
+| `kanagawa-lotus` | Light variant with soft, warm cream tones |
+| `kanagawa-blossom` | Dark theme with cherry blossom pink pastels |
+
+### Catppuccin Family
+Inspired by [Catppuccin](https://github.com/catppuccin/catppuccin) - soothing pastel theme.
+
+| Scheme | Description |
+|--------|-------------|
+| `catppuccin-mocha` | Darkest variant with rich, vibrant pastels |
+| `catppuccin-macchiato` | Dark with slightly warmer undertones |
+| `catppuccin-frappe` | Medium dark with cool undertones |
+| `catppuccin-latte` | Light variant with warm, soft tones |
+
+### Adding Custom Schemes
+
+Create a new CSS file in `~/.config/waybar/colors/`:
+
+```css
+/* ~/.config/waybar/colors/my-theme.css */
+
+@define-color sumiInk0 #background;
+@define-color sumiInk3 #lighter-bg;
+@define-color sumiInk5 #border;
+@define-color sumiInk6 #muted;
+
+@define-color fujiWhite #foreground;
+@define-color fujiGray #dimmed-text;
+@define-color oldWhite #secondary-text;
+
+@define-color sakuraPink #accent;
+@define-color oniViolet #purple;
+@define-color springBlue #blue;
+@define-color springGreen #green;
+@define-color carpYellow #yellow;
+@define-color waveRed #red;
+```
+
+Then set `color_scheme=my-theme` in suminami.conf.
+
+## Modules
+
+| Module | Description | Click Action |
+|--------|-------------|--------------|
+| Launcher | App launcher icon | Opens wofi |
+| Workspaces | Hyprland/Sway workspaces | Switch workspace |
+| Media | Now playing info | Play/pause |
+| Window | Active window title | - |
+| CPU | Usage with top processes | Opens btop/htop |
+| Memory | Usage with top processes | - |
+| Temperature | CPU temp, fan speed, power mode | - |
+| Backlight | Display & keyboard brightness | Scroll to adjust |
+| Battery | Charge, time remaining | - |
+| Weather | Current conditions | - |
+| Network | WiFi/Ethernet status, bandwidth | WiFi picker |
+| Bluetooth | Connection status | Bluetooth picker |
+| Audio | Volume, mic status | Toggle mute |
+| Clock | Date and time | Calendar tooltip |
+
+## Customization
+
+### Hiding Modules
+
+Comment out modules in `config.jsonc`:
+
+```jsonc
+"modules-right": [
+    "tray",
+    "custom/cpu",
+    "custom/memory",
+    // "custom/weather",  // Hidden
+    "custom/network",
+    "clock"
+],
+```
+
+### Tooltip Styling
+
+Tooltips use Pango markup. Edit the scripts in `~/.config/waybar/scripts/` to customize.
+
+## Troubleshooting
+
+### Waybar not starting
+```bash
+# Check for errors
+waybar -l debug
+```
+
+### Icons not showing
+Ensure JetBrainsMono Nerd Font is installed and set in style.css.
+
+### Modules not appearing
+- Check if required tools are installed (sensors, brightnessctl, etc.)
+- Verify hardware exists (battery, bluetooth controller, etc.)
+- Check script permissions: `chmod +x ~/.config/waybar/scripts/*`
+
+### WiFi/Bluetooth picker not themed
+Run `generate-style` to regenerate wofi theme:
+```bash
+~/.config/waybar/scripts/generate-style
+```
+
+## Credits
+
+- **Color Schemes:** [Kanagawa](https://github.com/rebelot/kanagawa.nvim) by rebelot (MIT License)
+- **Inspiration:** The Great Wave off Kanagawa by Katsushika Hokusai
+
+## License
+
+MIT License - See [LICENSE](LICENSE) for details.
+
+Color schemes are from their respective projects and maintain their original licenses.

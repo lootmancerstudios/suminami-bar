@@ -1,0 +1,30 @@
+/* SumiNami Bar - Auto-generated for 1440px (small tier) */
+/* Color scheme: kanagawa */
+
+*,
+label {
+    font-size: 11px;
+    font-weight: 700;
+}
+
+#custom-launcher {
+    font-size: 14px;
+    padding: 0 12px 0 16px;
+}
+
+/* Theme-specific background opacity */
+window#waybar {
+    background-color: alpha(@sumiInk0, 0.9);
+}
+
+/* Tooltip colors - hardcoded for theme compatibility */
+window tooltip,
+window#waybar tooltip {
+    background-color: #16161D;
+    border-color: #363646;
+}
+
+window tooltip label,
+window#waybar tooltip label {
+    color: #DCD7BA;
+}
