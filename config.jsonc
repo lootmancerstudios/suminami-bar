@@ -22,6 +22,7 @@
         "custom/power-profile",
         "custom/weather",
         "custom/network",
+        "custom/traffic",
         "custom/bluetooth",
         "custom/audio",
         "clock"
@@ -56,11 +57,11 @@
             "mode": "month",
             "weeks-pos": "left",
             "format": {
-                "months": "<span color='#DCD7BA'><b>{}</b></span>",
-                "weeks": "<span color='#727169'>{}</span>",
-                "weekdays": "<span color='#D27E99'>{}</span>",
-                "days": "<span color='#727169'>{}</span>",
-                "today": "<span color='#D27E99'><b>{}</b></span>"
+                "months": "<span color='#E8E3D3'><b>{}</b></span>",
+                "weeks": "<span color='#8A8598'>{}</span>",
+                "weekdays": "<span color='#F4A7B9'>{}</span>",
+                "days": "<span color='#8A8598'>{}</span>",
+                "today": "<span color='#F4A7B9'><b>{}</b></span>"
             }
         }
     },
@@ -70,6 +71,12 @@
         "return-type": "json",
         "interval": 2,
         "on-click": "~/.config/waybar/scripts/wifi-picker"
+    },
+
+    "custom/traffic": {
+        "exec": "~/.config/waybar/scripts/traffic",
+        "return-type": "json",
+        "interval": 1
     },
 
     "tray": {

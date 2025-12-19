@@ -1,4 +1,4 @@
-@import "colors/kanagawa.css";
+@import "colors/kanagawa-blossom.css";
 @import "scale.css";
 
 /* Base styles */
@@ -120,6 +120,7 @@ tooltip label {
 #custom-temp,
 #custom-weather,
 #custom-network,
+#custom-traffic,
 #custom-bluetooth,
 #custom-battery,
 #custom-backlight,
@@ -150,6 +151,15 @@ tooltip label {
 
 #custom-network {
     color: @module-network;
+}
+
+#custom-traffic {
+    color: @module-muted;
+}
+
+#custom-traffic.hidden {
+    padding: 0;
+    margin: 0;
 }
 
 #custom-audio {
@@ -251,6 +261,7 @@ tooltip label {
 #custom-temp:hover,
 #custom-weather:hover,
 #custom-network:hover,
+#custom-traffic:hover,
 #custom-bluetooth:hover,
 #custom-battery:hover,
 #custom-backlight:hover,
@@ -263,7 +274,8 @@ tooltip label {
 #custom-backlight:hover,
 #custom-battery:hover,
 #custom-power-profile:hover,
-#custom-bluetooth:hover {
+#custom-bluetooth:hover,
+#custom-traffic:hover {
     color: @fujiWhite;
 }
 
