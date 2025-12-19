@@ -21,29 +21,28 @@ A polished, feature-rich Waybar theme with rich tooltips, resolution-aware scali
 
 ## Installation
 
-### Dependencies
+### Quick Install (Recommended)
 
-**Required:**
-- waybar
-- wofi (or rofi)
-- JetBrainsMono Nerd Font
+Run the interactive installer:
 
-**Recommended:**
-- NetworkManager (for network/wifi functionality)
-- bluez + bluez-utils (for bluetooth)
-- brightnessctl (for backlight control)
-- playerctl (for media controls)
-- lm_sensors (for temperature monitoring)
-
-**Arch Linux:**
 ```bash
-sudo pacman -S waybar wofi networkmanager bluez bluez-utils brightnessctl playerctl lm_sensors
-yay -S ttf-jetbrains-mono-nerd  # or from official repos
+bash <(curl -s https://raw.githubusercontent.com/lootmancerstudios/suminami-bar/main/install.sh)
 ```
 
-### Install SumiNami Bar
+The installer will:
+- Check and install missing dependencies
+- Automatically backup your existing waybar config
+- Clone and configure SumiNami Bar
+- Start waybar
+
+### Manual Install
+
+If you prefer manual installation:
 
 ```bash
+# Install dependencies (Arch Linux)
+sudo pacman -S waybar wofi brightnessctl playerctl lm_sensors ttf-jetbrains-mono-nerd
+
 # Backup existing config
 mv ~/.config/waybar ~/.config/waybar.bak
 
@@ -53,27 +52,27 @@ git clone https://github.com/lootmancerstudios/suminami-bar.git ~/.config/waybar
 # Make scripts executable
 chmod +x ~/.config/waybar/scripts/*
 
-# Generate initial styles
-~/.config/waybar/scripts/generate-style
+# Generate styles and start
+~/.config/waybar/scripts/generate-style && waybar
 ```
 
 ### Hyprland Setup
 
-Add to your Hyprland config (`~/.config/hypr/hyprland.conf` or `env.conf`):
+Add to your Hyprland config (`~/.config/hypr/hyprland.conf`):
 
 ```ini
 exec-once = ~/.config/waybar/scripts/generate-style && waybar
 ```
 
-### Sway Setup
+### Uninstall / Restore Previous Config
 
-Add to your Sway config:
+Run the installer again and select "Restore previous config" or "Uninstall":
 
 ```bash
-exec ~/.config/waybar/scripts/generate-style && waybar
+~/.config/waybar/install.sh
 ```
 
-*Note: Replace `hyprland/workspaces` and `hyprland/window` modules with `sway/workspaces` and `sway/window` in config.jsonc*
+Your previous waybar config is saved in `~/.config/waybar-backups/`.
 
 ## Configuration
 
