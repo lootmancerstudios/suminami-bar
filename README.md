@@ -9,7 +9,7 @@ A polished, feature-rich Waybar theme with rich tooltips, resolution-aware scali
 
 - **Rich Pango Tooltips** - Detailed, styled tooltips with color-coded information
 - **Resolution-Aware Scaling** - Automatically adjusts font sizes and dimensions for different displays
-- **Multiple Color Schemes** - Kanagawa (Wave, Dragon, Lotus) with more coming
+- **Multiple Color Schemes** - 9 themes: Kanagawa (4 variants), Catppuccin (4 variants), Gruvbox Dark
 - **Comprehensive Modules** - CPU, Memory, Temperature, Battery, Network, Bluetooth, Audio, Weather, Media
 - **Custom Pickers** - Themed wofi menus for WiFi and Bluetooth management
 - **Hardware Detection** - Gracefully hides modules when hardware isn't present (no battery on desktop, etc.)
@@ -48,7 +48,7 @@ yay -S ttf-jetbrains-mono-nerd  # or from official repos
 mv ~/.config/waybar ~/.config/waybar.bak
 
 # Clone SumiNami Bar
-git clone https://github.com/YOUR_USERNAME/suminami-bar.git ~/.config/waybar
+git clone https://github.com/lootmancerstudios/suminami-bar.git ~/.config/waybar
 
 # Make scripts executable
 chmod +x ~/.config/waybar/scripts/*
@@ -81,7 +81,9 @@ Edit `~/.config/waybar/suminami.conf`:
 
 ```ini
 # Color Scheme
-# Available: kanagawa, kanagawa-dragon, kanagawa-lotus
+# Available: kanagawa, kanagawa-dragon, kanagawa-lotus, kanagawa-blossom
+#            catppuccin-mocha, catppuccin-macchiato, catppuccin-frappe, catppuccin-latte
+#            gruvbox-dark
 color_scheme=kanagawa
 
 # Modules (true/false)
@@ -133,28 +135,44 @@ Inspired by [Catppuccin](https://github.com/catppuccin/catppuccin) - soothing pa
 | `catppuccin-frappe` | Medium dark with cool undertones |
 | `catppuccin-latte` | Light variant with warm, soft tones |
 
+### Gruvbox
+Inspired by [Gruvbox](https://github.com/morhetz/gruvbox) - retro groove color scheme.
+
+| Scheme | Description |
+|--------|-------------|
+| `gruvbox-dark` | Warm, earthy tones with orange accents |
+
 ### Adding Custom Schemes
 
-Create a new CSS file in `~/.config/waybar/colors/`:
+Create a new CSS file in `~/.config/waybar/colors/`. Copy an existing theme as a starting point:
+
+```bash
+cp ~/.config/waybar/colors/kanagawa.css ~/.config/waybar/colors/my-theme.css
+```
+
+Key variables to customize:
 
 ```css
-/* ~/.config/waybar/colors/my-theme.css */
+/* Background shades (darkest to lightest) */
+@define-color sumiInk0 #16161D;  /* Bar background */
+@define-color sumiInk3 #1F1F28;  /* Hover backgrounds */
+@define-color sumiInk5 #363646;  /* Borders */
 
-@define-color sumiInk0 #background;
-@define-color sumiInk3 #lighter-bg;
-@define-color sumiInk5 #border;
-@define-color sumiInk6 #muted;
+/* Foreground */
+@define-color fujiWhite #DCD7BA;  /* Main text */
+@define-color fujiGray #727169;   /* Dimmed text */
 
-@define-color fujiWhite #foreground;
-@define-color fujiGray #dimmed-text;
-@define-color oldWhite #secondary-text;
-
-@define-color sakuraPink #accent;
-@define-color oniViolet #purple;
-@define-color springBlue #blue;
-@define-color springGreen #green;
-@define-color carpYellow #yellow;
-@define-color waveRed #red;
+/* Module colors (what you see in the bar) */
+@define-color module-clock #D27E99;
+@define-color module-launcher #D27E99;
+@define-color module-workspace-active #D27E99;
+@define-color module-system #98BB6C;      /* CPU, memory, temp */
+@define-color module-weather #A3D4D5;
+@define-color module-network #957FB8;
+@define-color module-audio #7FB4CA;
+@define-color module-muted #727169;       /* Inactive elements */
+@define-color state-warning #E6C384;
+@define-color state-critical #E46876;
 ```
 
 Then set `color_scheme=my-theme` in suminami.conf.
@@ -180,19 +198,21 @@ Then set `color_scheme=my-theme` in suminami.conf.
 
 ## Customization
 
-### Hiding Modules
+### Toggling Modules
 
-Comment out modules in `config.jsonc`:
+Enable or disable modules in `suminami.conf`:
 
-```jsonc
-"modules-right": [
-    "tray",
-    "custom/cpu",
-    "custom/memory",
-    // "custom/weather",  // Hidden
-    "custom/network",
-    "clock"
-],
+```ini
+module_taskbar=false
+module_media=true
+module_weather=true
+module_bluetooth=true
+module_backlight=true
+```
+
+After changing, restart waybar:
+```bash
+pkill waybar && ~/.config/waybar/scripts/generate-style && waybar
 ```
 
 ### Tooltip Styling
@@ -223,7 +243,10 @@ Run `generate-style` to regenerate wofi theme:
 
 ## Credits
 
-- **Color Schemes:** [Kanagawa](https://github.com/rebelot/kanagawa.nvim) by rebelot (MIT License)
+- **Color Schemes:**
+  - [Kanagawa](https://github.com/rebelot/kanagawa.nvim) by rebelot
+  - [Catppuccin](https://github.com/catppuccin/catppuccin) by Catppuccin Org
+  - [Gruvbox](https://github.com/morhetz/gruvbox) by morhetz
 - **Inspiration:** The Great Wave off Kanagawa by Katsushika Hokusai
 
 ## License
