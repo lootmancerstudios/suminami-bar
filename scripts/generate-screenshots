@@ -62,8 +62,8 @@ apply_theme() {
     waybar &
     disown
 
-    # Wait for waybar to start
-    sleep 1
+    # Wait for waybar to start and system to settle
+    sleep 20
 }
 
 # Main
