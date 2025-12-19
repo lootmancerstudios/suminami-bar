@@ -17,7 +17,9 @@ A polished, feature-rich Waybar theme with rich tooltips, resolution-aware scali
 
 ## Screenshots
 
-*Coming soon*
+![All Themes](screenshots/all-themes.png)
+
+*From top to bottom: Kanagawa, Kanagawa Dragon, Kanagawa Lotus, Kanagawa Blossom, Catppuccin Mocha, Catppuccin Macchiato, Catppuccin Frappe, Catppuccin Latte, Gruvbox Dark*
 
 ## Installation
 
