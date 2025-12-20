@@ -41,12 +41,12 @@ get_powered_dbus() {
 get_connected_devices_dbus() {
     local adapter="$1"
     # List all device paths under the adapter
-    busctl tree org.bluez 2>/dev/null | grep -oP "${adapter}/dev_[A-F0-9_]+" | while read -r dev_path; do
+    busctl tree org.bluez 2>/dev/null | grep -oiP "${adapter}/dev_[A-Fa-f0-9_]+" | while read -r dev_path; do
         # Check if connected
         local connected=$(busctl get-property org.bluez "$dev_path" org.bluez.Device1 Connected 2>/dev/null | awk '{print $2}')
         if [ "$connected" = "true" ]; then
             local name=$(busctl get-property org.bluez "$dev_path" org.bluez.Device1 Name 2>/dev/null | sed 's/^s "\(.*\)"$/\1/')
-            local mac=$(echo "$dev_path" | grep -oP 'dev_\K[A-F0-9_]+' | tr '_' ':')
+            local mac=$(echo "$dev_path" | grep -oiP 'dev_\K[A-Fa-f0-9_]+' | tr '_' ':' | tr '[:lower:]' '[:upper:]')
             echo "$mac $name"
         fi
     done
