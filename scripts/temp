@@ -24,9 +24,20 @@ green="$COLOR_SYSTEM"
 
 output=$(sensors 2>/dev/null)
 
-# Main display temp (CPU Package)
+# Main display temp - try multiple sources for compatibility
+# 1. Intel: Package id 0 (coretemp)
 temp=$(echo "$output" | awk '/Package id 0/{gsub(/[+°C]/,"",$4); print int($4)}')
+# 2. Intel fallback: Core 0
 [ -z "$temp" ] && temp=$(echo "$output" | awk '/Core 0/{gsub(/[+°C]/,"",$3); print int($3)}')
+# 3. AMD Ryzen: Tctl (k10temp)
+[ -z "$temp" ] && temp=$(echo "$output" | awk '/Tctl:/{gsub(/[+°C]/,"",$2); print int($2)}')
+# 4. AMD Ryzen: Tdie (actual die temp, preferred over Tctl)
+tdie=$(echo "$output" | awk '/Tdie:/{gsub(/[+°C]/,"",$2); print int($2)}')
+[ -n "$tdie" ] && temp="$tdie"
+# 5. AMD older: temp1 from k10temp
+[ -z "$temp" ] && temp=$(echo "$output" | awk '/k10temp/,/^$/{if(/temp1/) {gsub(/[+°C]/,"",$2); print int($2)}}' | head -1)
+# 6. Generic: any CPU temp
+[ -z "$temp" ] && temp=$(echo "$output" | awk '/CPU.*:/{gsub(/[+°C]/,"",$2); print int($2); exit}')
 [ -z "$temp" ] && exit 1
 
 class=""
@@ -40,24 +51,42 @@ temp_color="$green"
 [ "$temp" -ge 85 ] && temp_color="$red"
 
 # Build tooltip with key sensors
-tooltip="<span color='$accent'><b>CPU Package:</b></span> <span color='$temp_color'>${temp}°C</span>"
+# Determine if Intel or AMD
+is_amd=$(echo "$output" | grep -q "k10temp\|zenpower" && echo "true" || echo "false")
 
-core0=$(echo "$output" | awk '/Core 0:/{gsub(/[+°C]/,"",$3); print int($3)}')
-core1=$(echo "$output" | awk '/Core 1:/{gsub(/[+°C]/,"",$3); print int($3)}')
-[ -n "$core0" ] && tooltip="$tooltip\n<span color='$gray'>Core 0:</span> <span color='$white'>${core0}°C</span>"
-[ -n "$core1" ] && tooltip="$tooltip\n<span color='$gray'>Core 1:</span> <span color='$white'>${core1}°C</span>"
+if [ "$is_amd" = "true" ]; then
+    tooltip="<span color='$accent'><b>CPU Temperature:</b></span> <span color='$temp_color'>${temp}°C</span>"
+    # AMD CCD temps (multi-chiplet designs)
+    ccd0=$(echo "$output" | awk '/Tccd1:/{gsub(/[+°C]/,"",$2); print int($2)}')
+    ccd1=$(echo "$output" | awk '/Tccd2:/{gsub(/[+°C]/,"",$2); print int($2)}')
+    [ -n "$ccd0" ] && tooltip="$tooltip\n<span color='$gray'>CCD1:</span> <span color='$white'>${ccd0}°C</span>"
+    [ -n "$ccd1" ] && tooltip="$tooltip\n<span color='$gray'>CCD2:</span> <span color='$white'>${ccd1}°C</span>"
+else
+    tooltip="<span color='$accent'><b>CPU Package:</b></span> <span color='$temp_color'>${temp}°C</span>"
+    # Intel core temps
+    core0=$(echo "$output" | awk '/Core 0:/{gsub(/[+°C]/,"",$3); print int($3)}')
+    core1=$(echo "$output" | awk '/Core 1:/{gsub(/[+°C]/,"",$3); print int($3)}')
+    [ -n "$core0" ] && tooltip="$tooltip\n<span color='$gray'>Core 0:</span> <span color='$white'>${core0}°C</span>"
+    [ -n "$core1" ] && tooltip="$tooltip\n<span color='$gray'>Core 1:</span> <span color='$white'>${core1}°C</span>"
+fi
 
-# SSD/HDD (Apple TH0A)
-ssd=$(echo "$output" | awk '/TH0A:/{gsub(/[+°C]/,"",$2); print int($2)}')
-[ -n "$ssd" ] && [ "$ssd" -gt 0 ] && tooltip="$tooltip\n\n<span color='$gray'>SSD:</span> <span color='$white'>${ssd}°C</span>"
+# GPU temperature (AMD/NVIDIA/Intel)
+gpu=$(echo "$output" | awk '/edge:/{gsub(/[+°C]/,"",$2); print int($2)}')  # AMD
+[ -z "$gpu" ] && gpu=$(echo "$output" | awk '/GPU Core:/{gsub(/[+°C]/,"",$3); print int($3)}')  # NVIDIA
+[ -n "$gpu" ] && tooltip="$tooltip\n\n<span color='$gray'>GPU:</span> <span color='$white'>${gpu}°C</span>"
 
-# Battery
-bat=$(echo "$output" | awk '/BAT0/,/temp:/{if(/temp:/) {gsub(/[+°C]/,"",$2); print int($2)}}')
-[ -n "$bat" ] && tooltip="$tooltip\n<span color='$gray'>Battery:</span> <span color='$white'>${bat}°C</span>"
+# NVMe/SSD temps (generic)
+nvme=$(echo "$output" | awk '/Composite:/{gsub(/[+°C]/,"",$2); print int($2)}')
+[ -z "$nvme" ] && nvme=$(echo "$output" | awk '/TH0A:/{gsub(/[+°C]/,"",$2); print int($2)}')  # Apple
+[ -n "$nvme" ] && [ "$nvme" -gt 0 ] && tooltip="$tooltip\n<span color='$gray'>NVMe:</span> <span color='$white'>${nvme}°C</span>"
 
-# Fan
-fan=$(echo "$output" | awk '/Exhaust/{gsub(/:/, "", $2); print $2}')
-[ -n "$fan" ] && tooltip="$tooltip\n\n<span color='$blue'>󰈐 ${fan} RPM</span>"
+# Battery temp (various formats)
+bat=$(echo "$output" | awk '/BAT.*temp:|Battery.*:/{gsub(/[+°C]/,"",$2); print int($2); exit}')
+[ -n "$bat" ] && [ "$bat" -gt 0 ] && tooltip="$tooltip\n<span color='$gray'>Battery:</span> <span color='$white'>${bat}°C</span>"
+
+# Fan speeds (various formats)
+fan=$(echo "$output" | awk '/fan1:|Exhaust:/{print $2; exit}' | tr -d ':')
+[ -n "$fan" ] && [ "$fan" -gt 0 ] && tooltip="$tooltip\n\n<span color='$blue'>󰈐 ${fan} RPM</span>"
 
 # Power profile (for read-only backends like TLP/auto-cpufreq)
 get_power_profile() {
