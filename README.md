@@ -10,9 +10,11 @@ A polished, feature-rich Waybar theme with rich tooltips, resolution-aware scali
 - **Rich Pango Tooltips** - Detailed, styled tooltips with color-coded information
 - **Resolution-Aware Scaling** - Automatically adjusts font sizes and dimensions for different displays
 - **Multiple Color Schemes** - 9 themes: Kanagawa (4 variants), Catppuccin (4 variants), Gruvbox Dark
-- **Comprehensive Modules** - CPU, Memory, Temperature, Battery, Network, Bluetooth, Audio, Weather, Media
+- **Comprehensive Modules** - CPU, Memory, Temperature, Battery, Network, Traffic, Bluetooth, Audio, Weather, Media
 - **Custom Pickers** - Themed wofi menus for WiFi and Bluetooth management
 - **Hardware Detection** - Gracefully hides modules when hardware isn't present (no battery on desktop, etc.)
+- **Smart Workspaces** - Visual distinction between empty and occupied workspaces
+- **Cross-Hardware Support** - Works with Intel and AMD CPUs, various power managers (TLP, auto-cpufreq, power-profiles-daemon)
 - **Central Configuration** - Single config file for all customizations
 
 ## Screenshots
@@ -93,6 +95,7 @@ module_media=true
 module_weather=true
 module_bluetooth=true
 module_backlight=true
+module_traffic=false     # Live upload/download speeds
 
 # Thresholds
 cpu_warning=50
@@ -105,8 +108,17 @@ battery_warning=30
 battery_critical=15
 
 # Behavior
-weather_location=        # Leave empty for auto-detect
 tooltip_delay=200        # Milliseconds
+
+# Weather location (leave empty for auto-detect via IP)
+# Formats: City | City,Country | City,State | Airport code | Coordinates
+weather_location=
+# Examples: London, Paris,France, Austin,TX, JFK, 48.8567,2.3508
+
+# Custom commands (leave empty for defaults)
+launcher_command=wofi --show drun
+wifi_click_command=              # Default: built-in wifi-picker
+bluetooth_click_command=         # Default: built-in bluetooth-picker
 ```
 
 After editing, restart waybar:
@@ -182,20 +194,24 @@ Then set `color_scheme=my-theme` in suminami.conf.
 
 | Module | Description | Click Action |
 |--------|-------------|--------------|
-| Launcher | App launcher icon | Opens wofi |
-| Workspaces | Hyprland/Sway workspaces | Switch workspace |
+| Launcher | App launcher icon | Opens wofi (configurable) |
+| Workspaces | Hyprland/Sway workspaces (occupied vs empty) | Switch workspace |
 | Media | Now playing info | Play/pause |
 | Window | Active window title | - |
 | CPU | Usage with top processes | Opens btop/htop |
 | Memory | Usage with top processes | - |
-| Temperature | CPU temp, fan speed, power mode | - |
+| Temperature | CPU temp (Intel/AMD), GPU, fan speed, power mode | - |
 | Backlight | Display & keyboard brightness | Scroll to adjust |
-| Battery | Charge, time remaining | - |
-| Weather | Current conditions | - |
-| Network | WiFi/Ethernet status, bandwidth | WiFi picker |
-| Bluetooth | Connection status | Bluetooth picker |
+| Battery | Charge, time remaining (multi-battery support) | - |
+| Power Profile | Current power mode (power-profiles-daemon only) | Cycle profiles |
+| Weather | Current conditions (auto or manual location) | - |
+| Network | WiFi/Ethernet status, signal strength | WiFi picker |
+| Traffic | Live upload/download speeds (optional) | - |
+| Bluetooth | Connection status, device battery | Bluetooth picker |
 | Audio | Volume, mic status | Toggle mute |
 | Clock | Date and time | Calendar tooltip |
+
+**Note:** Power Profile module only appears with `power-profiles-daemon`. If using TLP or auto-cpufreq, power mode is shown in the Temperature tooltip instead.
 
 ## Customization
 
@@ -209,6 +225,7 @@ module_media=true
 module_weather=true
 module_bluetooth=true
 module_backlight=true
+module_traffic=false
 ```
 
 After changing, restart waybar:
