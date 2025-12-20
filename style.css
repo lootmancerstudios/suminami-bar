@@ -48,7 +48,7 @@ tooltip label {
 
 #workspaces button {
     padding: 0 6px;
-    color: @module-muted;
+    color: @fujiWhite;
     background: transparent;
     border: none;
     border-radius: 0;
@@ -56,6 +56,10 @@ tooltip label {
     border-bottom: none;
     box-shadow: none;
     transition: all 0.15s ease;
+}
+
+#workspaces button.empty {
+    color: @sumiInk6;
 }
 
 #workspaces button:hover {
