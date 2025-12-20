@@ -1,5 +1,6 @@
 #!/bin/bash
 # Bluetooth status widget with connected devices and battery info
+# Uses D-Bus (busctl) as primary, bluetoothctl as fallback
 
 # Source theme colors
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
@@ -22,32 +23,83 @@ green="$COLOR_SYSTEM"
 yellow="$COLOR_WARNING"
 red="$COLOR_CRITICAL"
 
-# Check if bluetooth is available (try bluetoothctl first, then D-Bus)
+# ─────────────────────────────────────────────────────────────────────
+# D-Bus (busctl) methods - primary
+# ─────────────────────────────────────────────────────────────────────
+
+get_adapter_dbus() {
+    # Find first bluetooth adapter
+    busctl tree org.bluez 2>/dev/null | grep -oP '/org/bluez/hci\d+' | head -1
+}
+
+get_powered_dbus() {
+    local adapter="$1"
+    local powered=$(busctl get-property org.bluez "$adapter" org.bluez.Adapter1 Powered 2>/dev/null | awk '{print $2}')
+    [ "$powered" = "true" ] && echo "yes" || echo "no"
+}
+
+get_connected_devices_dbus() {
+    local adapter="$1"
+    # List all device paths under the adapter
+    busctl tree org.bluez 2>/dev/null | grep -oP "${adapter}/dev_[A-F0-9_]+" | while read -r dev_path; do
+        # Check if connected
+        local connected=$(busctl get-property org.bluez "$dev_path" org.bluez.Device1 Connected 2>/dev/null | awk '{print $2}')
+        if [ "$connected" = "true" ]; then
+            local name=$(busctl get-property org.bluez "$dev_path" org.bluez.Device1 Name 2>/dev/null | sed 's/^s "\(.*\)"$/\1/')
+            local mac=$(echo "$dev_path" | grep -oP 'dev_\K[A-F0-9_]+' | tr '_' ':')
+            echo "$mac $name"
+        fi
+    done
+}
+
+# ─────────────────────────────────────────────────────────────────────
+# bluetoothctl methods - fallback
+# ─────────────────────────────────────────────────────────────────────
+
+get_powered_ctl() {
+    bluetoothctl show 2>/dev/null | grep "Powered:" | awk '{print $2}'
+}
+
+get_connected_devices_ctl() {
+    bluetoothctl devices Connected 2>/dev/null
+}
+
+# ─────────────────────────────────────────────────────────────────────
+# Main logic
+# ─────────────────────────────────────────────────────────────────────
+
+# Determine which method to use
 use_dbus=false
-if ! command -v bluetoothctl &>/dev/null; then
-    # Try D-Bus fallback
-    if command -v busctl &>/dev/null && busctl introspect org.bluez /org/bluez &>/dev/null; then
+use_ctl=false
+adapter=""
+
+# Try D-Bus first (busctl)
+if command -v busctl &>/dev/null; then
+    adapter=$(get_adapter_dbus)
+    if [ -n "$adapter" ]; then
         use_dbus=true
-    else
-        # No bluetooth support available
-        echo '{"text": "", "tooltip": "", "class": "none"}'
-        exit 0
     fi
 fi
 
-# Check if bluetooth controller exists
-if [ "$use_dbus" = false ] && ! bluetoothctl show &>/dev/null; then
-    # Try D-Bus as backup
-    if command -v busctl &>/dev/null && busctl introspect org.bluez /org/bluez &>/dev/null; then
-        use_dbus=true
-    else
-        echo '{"text": "", "tooltip": "", "class": "none"}'
-        exit 0
+# Fall back to bluetoothctl
+if [ "$use_dbus" = false ] && command -v bluetoothctl &>/dev/null; then
+    if bluetoothctl show &>/dev/null; then
+        use_ctl=true
     fi
 fi
 
-# Get controller power state
-powered=$(bluetoothctl show | grep "Powered:" | awk '{print $2}')
+# No bluetooth available
+if [ "$use_dbus" = false ] && [ "$use_ctl" = false ]; then
+    echo '{"text": "", "tooltip": "", "class": "none"}'
+    exit 0
+fi
+
+# Get power state
+if [ "$use_dbus" = true ]; then
+    powered=$(get_powered_dbus "$adapter")
+else
+    powered=$(get_powered_ctl)
+fi
 
 if [ "$powered" != "yes" ]; then
     tooltip="<span color='$accent'><b>Bluetooth</b></span>"
@@ -59,7 +111,11 @@ if [ "$powered" != "yes" ]; then
 fi
 
 # Get connected devices
-connected_devices=$(bluetoothctl devices Connected 2>/dev/null)
+if [ "$use_dbus" = true ]; then
+    connected_devices=$(get_connected_devices_dbus "$adapter")
+else
+    connected_devices=$(get_connected_devices_ctl)
+fi
 
 if [ -z "$connected_devices" ]; then
     # Bluetooth on but no devices connected
@@ -72,7 +128,7 @@ if [ -z "$connected_devices" ]; then
 fi
 
 # Count connected devices
-device_count=$(echo "$connected_devices" | wc -l)
+device_count=$(echo "$connected_devices" | grep -c .)
 
 # Build tooltip with device info
 tooltip="<span color='$accent'><b>Bluetooth</b></span>"
@@ -81,8 +137,9 @@ tooltip="$tooltip\n"
 
 # List each connected device with battery if available
 while IFS= read -r line; do
-    mac=$(echo "$line" | awk '{print $2}')
-    name=$(echo "$line" | cut -d' ' -f3-)
+    [ -z "$line" ] && continue
+    mac=$(echo "$line" | awk '{print $1}')
+    name=$(echo "$line" | cut -d' ' -f2-)
 
     # Try to get battery level
     battery=""
@@ -107,7 +164,7 @@ while IFS= read -r line; do
         *watch*) icon="󰖉" ;;
     esac
 
-    if [ -n "$battery" ] && [ "$battery" -gt 0 ]; then
+    if [ -n "$battery" ] && [ "$battery" -gt 0 ] 2>/dev/null; then
         # Color based on battery level
         bat_color="$green"
         [ "$battery" -lt 50 ] && bat_color="$yellow"
