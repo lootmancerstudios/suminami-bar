@@ -1,4 +1,4 @@
-@import "colors/kanagawa-blossom.css";
+@import "colors/kanagawa.css";
 @import "scale.css";
 
 /* Base styles */
@@ -301,7 +301,7 @@ tooltip label {
     background: alpha(@sumiInk4, 0.6);
 }
 
-/* Bluetooth */
+/* Bluetooth - custom module */
 #custom-bluetooth {
     color: @module-bluetooth;
 }
@@ -321,4 +321,31 @@ tooltip label {
 #custom-bluetooth.none {
     padding: 0;
     margin: 0;
+}
+
+/* Bluetooth - built-in waybar module */
+#bluetooth {
+    color: @module-bluetooth;
+    padding: 0 8px;
+}
+
+#bluetooth.off {
+    color: @sumiInk6;
+}
+
+#bluetooth.on {
+    color: @module-muted;
+}
+
+#bluetooth.connected {
+    color: @module-bluetooth;
+}
+
+#bluetooth.discoverable,
+#bluetooth.discovering {
+    color: @module-bluetooth;
+}
+
+#bluetooth.disabled {
+    color: @sumiInk6;
 }

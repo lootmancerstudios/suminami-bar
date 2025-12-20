@@ -22,16 +22,28 @@ green="$COLOR_SYSTEM"
 yellow="$COLOR_WARNING"
 red="$COLOR_CRITICAL"
 
-# Check if bluetooth is available
+# Check if bluetooth is available (try bluetoothctl first, then D-Bus)
+use_dbus=false
 if ! command -v bluetoothctl &>/dev/null; then
-    echo '{"text": "", "tooltip": "", "class": "none"}'
-    exit 0
+    # Try D-Bus fallback
+    if command -v busctl &>/dev/null && busctl introspect org.bluez /org/bluez &>/dev/null; then
+        use_dbus=true
+    else
+        # No bluetooth support available
+        echo '{"text": "", "tooltip": "", "class": "none"}'
+        exit 0
+    fi
 fi
 
 # Check if bluetooth controller exists
-if ! bluetoothctl show &>/dev/null; then
-    echo '{"text": "", "tooltip": "", "class": "none"}'
-    exit 0
+if [ "$use_dbus" = false ] && ! bluetoothctl show &>/dev/null; then
+    # Try D-Bus as backup
+    if command -v busctl &>/dev/null && busctl introspect org.bluez /org/bluez &>/dev/null; then
+        use_dbus=true
+    else
+        echo '{"text": "", "tooltip": "", "class": "none"}'
+        exit 0
+    fi
 fi
 
 # Get controller power state

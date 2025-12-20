@@ -1,6 +1,15 @@
 #!/bin/bash
 # Bluetooth device picker using wofi
 
+# Check for custom command override
+CONFIG_FILE="$HOME/.config/waybar/suminami.conf"
+if [ -f "$CONFIG_FILE" ]; then
+    custom_cmd=$(grep "^bluetooth_click_command=" "$CONFIG_FILE" | cut -d'=' -f2-)
+    if [ -n "$custom_cmd" ]; then
+        exec $custom_cmd
+    fi
+fi
+
 # Get paired devices
 get_paired_devices() {
     bluetoothctl devices Paired 2>/dev/null | while read -r _ mac name; do

@@ -114,16 +114,27 @@ tx_total=$(format_total "$tx_bytes")
 
 # Build output based on connection type
 if $is_wifi; then
-    # Get SSID
+    # Get SSID (try multiple methods for compatibility)
+    # 1. iwgetid (wireless-tools, common)
     ssid=$(iwgetid -r 2>/dev/null)
+    # 2. iw dev (iproute2, works with iwd)
+    [ -z "$ssid" ] && ssid=$(iw dev "$iface" link 2>/dev/null | sed -n 's/^[[:space:]]*SSID: //p')
+    # 3. iwctl (iwd native)
+    [ -z "$ssid" ] && ssid=$(iwctl station "$iface" show 2>/dev/null | grep "Connected network" | sed 's/.*Connected network[[:space:]]*//')
+    # 4. nmcli (NetworkManager)
     [ -z "$ssid" ] && ssid=$(nmcli -t -f active,ssid dev wifi 2>/dev/null | awk -F: '/^yes/ {print $2}')
     [ -z "$ssid" ] && ssid="Unknown"
 
-    # Get signal strength (0-100)
+    # Get signal strength (0-100) - try multiple methods
+    # 1. /proc/net/wireless (most reliable when available)
     signal=$(awk '/'"$iface"'/ {print int($3 * 100 / 70)}' /proc/net/wireless 2>/dev/null)
+    # 2. iw dev (works with iwd)
+    [ -z "$signal" ] && signal=$(iw dev "$iface" link 2>/dev/null | awk '/signal:/ {print int(($2 + 100) * 2)}')
+    # 3. nmcli
     [ -z "$signal" ] && signal=$(nmcli -t -f active,signal dev wifi 2>/dev/null | awk -F: '/^yes/ {print $2}')
     [ -z "$signal" ] && signal=0
     [ "$signal" -gt 100 ] && signal=100
+    [ "$signal" -lt 0 ] && signal=0
 
     # Signal color
     signal_color="$green"
@@ -143,8 +154,9 @@ if $is_wifi; then
         signal_bar="<span color='$gray'>▂▄▆█</span>"
     fi
 
-    # Get frequency/channel
+    # Get frequency/channel (try multiple methods)
     freq=$(iwgetid -f 2>/dev/null | awk -F: '{gsub(/ /,"",$2); print $2}')
+    [ -z "$freq" ] && freq=$(iw dev "$iface" link 2>/dev/null | awk '/freq:/ {print $2/1000 "GHz"}')
 
     # Bar text
     text="󰖩 $ssid"

@@ -126,7 +126,26 @@ def signal_icon(strength):
     else:
         return '󰤯'
 
+def check_custom_command():
+    """Check if user has configured a custom wifi click command"""
+    import os
+    config_file = os.path.expanduser('~/.config/waybar/suminami.conf')
+    if os.path.exists(config_file):
+        with open(config_file) as f:
+            for line in f:
+                if line.startswith('wifi_click_command='):
+                    cmd = line.split('=', 1)[1].strip()
+                    if cmd:
+                        return cmd
+    return None
+
 def main():
+    # Check for custom command override
+    custom_cmd = check_custom_command()
+    if custom_cmd:
+        subprocess.run(custom_cmd, shell=True)
+        sys.exit(0)
+
     current_ssid = get_current_connection()
     conn_type = get_connection_type()
 
