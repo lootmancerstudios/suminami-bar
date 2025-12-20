@@ -125,10 +125,10 @@
         "exec": "~/.config/waybar/scripts/backlight",
         "return-type": "json",
         "interval": 1,
-        "on-scroll-up": "brightnessctl set 5%+",
-        "on-scroll-down": "brightnessctl set 5%-",
-        "on-scroll-left": "brightnessctl -d '*kbd_backlight*' set 10%- 2>/dev/null || true",
-        "on-scroll-right": "brightnessctl -d '*kbd_backlight*' set 10%+ 2>/dev/null || true"
+        "on-scroll-up": "brightnessctl set 2%+",
+        "on-scroll-down": "brightnessctl set 2%-",
+        "on-scroll-left": "brightnessctl -d '*kbd_backlight*' set 5%- 2>/dev/null || true",
+        "on-scroll-right": "brightnessctl -d '*kbd_backlight*' set 5%+ 2>/dev/null || true"
     },
 
     "custom/audio": {
