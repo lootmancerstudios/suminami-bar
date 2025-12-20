@@ -5,7 +5,7 @@
 
 # Theme info
 THEME_NAME="kanagawa"
-THEME_IS_LIGHT="true"
+THEME_IS_LIGHT="false"
 
 # Background colors
 COLOR_BG="#16161D"
