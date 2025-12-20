@@ -4,13 +4,24 @@
 # - 1600-1919px: icon + track (truncated)
 # - >= 1920px: icon + artist - track
 
-# Kanagawa colors
-pink="#D27E99"
-blue="#7FB4CA"
-gray="#727169"
-white="#DCD7BA"
-green="#98BB6C"
-violet="#957FB8"
+# Source theme colors
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+source "$SCRIPT_DIR/colors.sh" 2>/dev/null || {
+    COLOR_ACCENT="#D27E99"
+    COLOR_FG="#DCD7BA"
+    COLOR_MUTED="#727169"
+    COLOR_AUDIO="#7FB4CA"
+    COLOR_SYSTEM="#98BB6C"
+    COLOR_NETWORK="#957FB8"
+}
+
+# Theme colors
+pink="$COLOR_ACCENT"
+blue="$COLOR_AUDIO"
+gray="$COLOR_MUTED"
+white="$COLOR_FG"
+green="$COLOR_SYSTEM"
+violet="$COLOR_NETWORK"
 
 # Check if playerctl exists
 if ! command -v playerctl &>/dev/null; then
