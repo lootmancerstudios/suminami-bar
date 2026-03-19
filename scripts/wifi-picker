@@ -11,11 +11,14 @@ import sys
 
 def get_current_connection():
     """Get currently connected WiFi SSID, or None"""
-    # Use iwgetid for reliable SSID detection
-    result = subprocess.run(['iwgetid', '-r'], capture_output=True, text=True)
-    ssid = result.stdout.strip()
-    if ssid:
-        return ssid
+    # Use iwgetid for reliable SSID detection (wireless-tools)
+    try:
+        result = subprocess.run(['iwgetid', '-r'], capture_output=True, text=True)
+        ssid = result.stdout.strip()
+        if ssid:
+            return ssid
+    except FileNotFoundError:
+        pass
 
     # Fallback to nmcli
     result = subprocess.run(

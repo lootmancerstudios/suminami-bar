@@ -11,4 +11,4 @@ if [ -f "$CONFIG_FILE" ]; then
 fi
 
 # Execute the launcher
-exec $launcher_cmd
+exec bash -c "$launcher_cmd"

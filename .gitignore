@@ -1,6 +1,6 @@
 # Backup files
 *.bak
 
-# Auto-generated (but keep as examples)
-# scale.css
-# scripts/colors.sh
+# Auto-generated at install time — not committed
+scale.css
+scripts/colors.sh
