@@ -58,20 +58,31 @@ fi
 # ─────────────────────────────────────────────────────────────────────
 # Detect screen resolution
 # ─────────────────────────────────────────────────────────────────────
-get_width() {
-    # Try Hyprland first
+get_logical_width() {
+    # Try Hyprland first — use logical width (physical / scale)
+    # This ensures the tier system accounts for compositor scaling
     if command -v hyprctl &>/dev/null; then
-        width=$(hyprctl monitors -j 2>/dev/null | grep -oP '"width":\s*\K\d+' | head -1)
-        [ -n "$width" ] && echo "$width" && return
+        local info
+        info=$(hyprctl monitors -j 2>/dev/null)
+        if [ -n "$info" ]; then
+            local phys_width scale
+            phys_width=$(echo "$info" | grep -oP '"width":\s*\K\d+' | head -1)
+            scale=$(echo "$info" | grep -oP '"scale":\s*\K[0-9.]+' | head -1)
+            if [ -n "$phys_width" ] && [ -n "$scale" ]; then
+                awk "BEGIN { printf \"%.0f\", $phys_width / $scale }"
+                return
+            fi
+            [ -n "$phys_width" ] && echo "$phys_width" && return
+        fi
     fi
 
-    # Try wlr-randr (Sway, etc.)
+    # Try wlr-randr (Sway, etc.) — no scale info, use raw
     if command -v wlr-randr &>/dev/null; then
         width=$(wlr-randr 2>/dev/null | grep -oP '\d+x\d+' | head -1 | cut -dx -f1)
         [ -n "$width" ] && echo "$width" && return
     fi
 
-    # Try xrandr (X11 fallback)
+    # Try xrandr (X11 fallback) — no scale info, use raw
     if command -v xrandr &>/dev/null; then
         width=$(xrandr 2>/dev/null | grep '\*' | head -1 | awk '{print $1}' | cut -dx -f1)
         [ -n "$width" ] && echo "$width" && return
@@ -80,7 +91,7 @@ get_width() {
     echo "1920"
 }
 
-width=$(get_width)
+width=$(get_logical_width)
 
 # ─────────────────────────────────────────────────────────────────────
 # Resolution scaling tiers
@@ -165,7 +176,7 @@ else
 fi
 
 cat > "$SCALE_FILE" << EOF
-/* SumiNami Bar - Auto-generated for ${width}px ($tier tier) */
+/* SumiNami Bar - Auto-generated for ${width}px logical ($tier tier) */
 /* Color scheme: $color_scheme */
 
 *,
@@ -210,7 +221,7 @@ mkdir -p "$WOFI_DIR"
 
 cat > "$WOFI_DIR/config" << EOF
 ## SumiNami Bar - Wofi config
-## Auto-generated for ${width}px ($tier tier)
+## Auto-generated for ${width}px logical ($tier tier)
 
 # Appearance
 width=$wofi_width
@@ -244,7 +255,7 @@ accent_color=$(get_color "module-clock") || accent_color="$accent"
 
 cat > "$WOFI_DIR/style.css" << EOF
 /* SumiNami Bar - Wofi theme ($color_scheme) */
-/* Auto-generated for ${width}px ($tier tier) */
+/* Auto-generated for ${width}px logical ($tier tier) */
 
 * {
     font-family: "JetBrainsMono Nerd Font", monospace;
