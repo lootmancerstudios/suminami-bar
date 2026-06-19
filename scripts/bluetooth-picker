@@ -6,15 +6,17 @@ CONFIG_FILE="$HOME/.config/waybar/suminami.conf"
 if [ -f "$CONFIG_FILE" ]; then
     custom_cmd=$(grep "^bluetooth_click_command=" "$CONFIG_FILE" | cut -d'=' -f2-)
     if [ -n "$custom_cmd" ]; then
-        exec $custom_cmd
+        # Run through a shell so a command with args/quoting works (and a path
+        # with spaces doesn't word-split into a bogus command name).
+        exec sh -c "$custom_cmd"
     fi
 fi
 
 # Get paired devices
 get_paired_devices() {
-    bluetoothctl devices Paired 2>/dev/null | while read -r _ mac name; do
+    bluetoothctl --timeout 5 devices Paired 2>/dev/null | while read -r _ mac name; do
         # Check if connected
-        if bluetoothctl info "$mac" 2>/dev/null | grep -q "Connected: yes"; then
+        if bluetoothctl --timeout 5 info "$mac" 2>/dev/null | grep -q "Connected: yes"; then
             echo "󰂱  $name|disconnect:$mac"
         else
             echo "󰂯  $name|connect:$mac"
@@ -25,8 +27,8 @@ get_paired_devices() {
 # Get discovered but unpaired devices
 get_discovered_devices() {
     # Get all devices, exclude paired ones
-    paired=$(bluetoothctl devices Paired 2>/dev/null | awk '{print $2}')
-    bluetoothctl devices 2>/dev/null | while read -r _ mac name; do
+    paired=$(bluetoothctl --timeout 5 devices Paired 2>/dev/null | awk '{print $2}')
+    bluetoothctl --timeout 5 devices 2>/dev/null | while read -r _ mac name; do
         # Skip if paired
         echo "$paired" | grep -q "$mac" && continue
         echo "󰂲  $name (new)|pair:$mac"
@@ -54,8 +56,15 @@ fi
 menu="${menu}\n󰑓  Scan for devices|scan"
 menu="${menu}\n󰜉  Toggle Bluetooth|toggle"
 
-# Show wofi
-choice=$(echo -e "$menu" | wofi --show dmenu --prompt "Bluetooth" --cache-file /dev/null | tail -1)
+# Show menu (prefer wofi, fall back to rofi, like wifi-picker)
+if command -v wofi &>/dev/null; then
+    choice=$(echo -e "$menu" | wofi --show dmenu --prompt "Bluetooth" --cache-file /dev/null | tail -1)
+elif command -v rofi &>/dev/null; then
+    choice=$(echo -e "$menu" | rofi -dmenu -p "Bluetooth" | tail -1)
+else
+    notify-send "Bluetooth" "No menu tool found (install wofi or rofi)"
+    exit 1
+fi
 
 [ -z "$choice" ] && exit 0
 
@@ -66,19 +75,19 @@ case "$action" in
     connect:*)
         mac="${action#connect:}"
         notify-send "Bluetooth" "Connecting..." -t 2000
-        bluetoothctl connect "$mac" && notify-send "Bluetooth" "Connected" -t 2000 || notify-send "Bluetooth" "Connection failed" -t 2000
+        bluetoothctl --timeout 15 connect "$mac" && notify-send "Bluetooth" "Connected" -t 2000 || notify-send "Bluetooth" "Connection failed" -t 2000
         ;;
     disconnect:*)
         mac="${action#disconnect:}"
-        bluetoothctl disconnect "$mac" && notify-send "Bluetooth" "Disconnected" -t 2000
+        bluetoothctl --timeout 10 disconnect "$mac" && notify-send "Bluetooth" "Disconnected" -t 2000
         ;;
     pair:*)
         mac="${action#pair:}"
         notify-send "Bluetooth" "Pairing..." -t 2000
-        if bluetoothctl pair "$mac"; then
-            bluetoothctl trust "$mac"
+        if bluetoothctl --timeout 15 pair "$mac"; then
+            bluetoothctl --timeout 5 trust "$mac"
             notify-send "Bluetooth" "Paired successfully. Connecting..." -t 2000
-            bluetoothctl connect "$mac"
+            bluetoothctl --timeout 15 connect "$mac"
         else
             notify-send "Bluetooth" "Pairing failed" -t 2000
         fi
@@ -92,11 +101,11 @@ case "$action" in
         exec "$0"
         ;;
     toggle)
-        powered=$(bluetoothctl show | grep "Powered:" | awk '{print $2}')
+        powered=$(bluetoothctl --timeout 5 show | grep "Powered:" | awk '{print $2}')
         if [ "$powered" = "yes" ]; then
-            bluetoothctl power off && notify-send "Bluetooth" "Powered off" -t 2000
+            bluetoothctl --timeout 5 power off && notify-send "Bluetooth" "Powered off" -t 2000
         else
-            bluetoothctl power on && notify-send "Bluetooth" "Powered on" -t 2000
+            bluetoothctl --timeout 5 power on && notify-send "Bluetooth" "Powered on" -t 2000
         fi
         ;;
     separator)

@@ -228,7 +228,12 @@ install_suminami() {
     print_header "Installing SumiNami Bar"
 
     print_step "Cloning repository..."
-    git clone "$REPO_URL" "$INSTALL_DIR"
+    # Stall detection + wall-clock backstop so a dropped/flaky connection aborts
+    # instead of hanging forever; fail loudly rather than building on a missing clone.
+    if ! timeout 300 git -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=20 clone "$REPO_URL" "$INSTALL_DIR"; then
+        print_error "Failed to clone repository (timed out or no connection)"
+        exit 1
+    fi
     print_success "Repository cloned"
 
     print_step "Setting script permissions..."
@@ -236,8 +241,13 @@ install_suminami() {
     print_success "Permissions set"
 
     print_step "Generating styles for your display..."
-    cd "$INSTALL_DIR"
-    ./scripts/generate-style
+    cd "$INSTALL_DIR" || { print_error "Cannot enter $INSTALL_DIR"; exit 1; }
+    # Gate the success message on the exit code so a hard failure doesn't report
+    # "Styles generated" while config files are missing.
+    if ! ./scripts/generate-style; then
+        print_error "Failed to generate styles"
+        exit 1
+    fi
     print_success "Styles generated"
 }
 

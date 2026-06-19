@@ -4,3 +4,7 @@
 # Auto-generated at install time — not committed
 scale.css
 scripts/colors.sh
+
+# Python bytecode
+__pycache__/
+*.pyc
