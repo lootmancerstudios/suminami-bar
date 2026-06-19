@@ -5,6 +5,7 @@ Caches successful results for 10 minutes. On failure, retries every interval.
 Location name resolved via Nominatim (OpenStreetMap), cached for 1 hour.
 """
 
+import html
 import json
 import os
 import time
@@ -244,15 +245,22 @@ def format_output(data):
         gray = colors["muted"]
         white = colors["fg"]
 
+        # Escape API-sourced text so values containing & < > (e.g. "São Paulo & Rio")
+        # don't break the Pango XML parser and blank the tooltip.
+        e_city = html.escape(str(city))
+        e_condition = html.escape(str(condition))
+        e_wind_dir = html.escape(str(wind_dir))
+        e_sunrise = html.escape(str(sunrise))
+        e_sunset = html.escape(str(sunset))
         tooltip_lines = [
-            f"<span color='{accent}'><b>{city}</b></span>",
-            f"<span color='{white}'>{condition}</span>",
+            f"<span color='{accent}'><b>{e_city}</b></span>",
+            f"<span color='{white}'>{e_condition}</span>",
             "",
             f"<span color='{gray}'>Feels like:</span> <span color='{highlight}'>{feels_c}°C</span>",
             f"<span color='{gray}'>Humidity:</span> <span color='{white}'>{humidity}%</span>",
-            f"<span color='{gray}'>Wind:</span> <span color='{white}'>{wind_kmph} km/h {wind_dir}</span>",
+            f"<span color='{gray}'>Wind:</span> <span color='{white}'>{wind_kmph} km/h {e_wind_dir}</span>",
             "",
-            f"<span color='{highlight}'>󰖨 {sunrise}</span>   <span color='{accent}'>󰖛 {sunset}</span>",
+            f"<span color='{highlight}'>󰖨 {e_sunrise}</span>   <span color='{accent}'>󰖛 {e_sunset}</span>",
         ]
         tooltip = "\n".join(tooltip_lines)
         icon = get_icon(code)

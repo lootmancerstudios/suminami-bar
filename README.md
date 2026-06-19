@@ -30,7 +30,15 @@ A polished, feature-rich Waybar theme with rich tooltips, resolution-aware scali
 Run the interactive installer:
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/lootmancerstudios/suminami-bar/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/lootmancerstudios/suminami-bar/main/install.sh)
+```
+
+**Prefer to review it first?** Reasonable — the installer touches your waybar config and installs packages:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/lootmancerstudios/suminami-bar/main/install.sh
+less install.sh   # review
+bash install.sh
 ```
 
 The installer will:
